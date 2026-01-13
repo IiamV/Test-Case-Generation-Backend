@@ -1,1 +1,5 @@
 # Dependency declaration
+fastapi
+uvicorn
+pydantic_settings
+python-multipart
