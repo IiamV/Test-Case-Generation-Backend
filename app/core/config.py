@@ -104,6 +104,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str | None = os.getenv("OPENAI_MODEL")
     LOCAL_LLM_MODEL: str | None = os.getenv("LOCAL_LLM_MODEL")
     EMBED_MODEL: str | None = os.getenv("EMBED_MODEL")
+    DATABASE_URL: str | None = os.getenv("DATABASE_URL")
 
 
 settings = Settings()
