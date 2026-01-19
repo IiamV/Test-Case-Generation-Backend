@@ -3,3 +3,7 @@ fastapi
 uvicorn
 pydantic_settings
 python-multipart
+chromadb
+sqlalchemy
+ollama
+fastapi
