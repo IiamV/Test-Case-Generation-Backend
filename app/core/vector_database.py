@@ -1,9 +1,30 @@
 
 import ollama
-from app.core.config import settings, chromadb_client
+from app.core.config import settings
+from chromadb.config import APIVersion, RoutingMode
+import chromadb.config
+import chromadb
 from typing import Sequence
+from chromadb.errors import ChromaError
 
+chromadb_client = chromadb.Client(
+    settings=chromadb.config.Settings(
+        persist_directory="../vector_data",
+        is_persistent=True,
+        anonymized_telemetry=True,
+    )
+)
 collection = chromadb_client.get_or_create_collection(name="requirements")
+
+
+def chromadb_healthcheck(client: chromadb_client) -> None:
+    try:
+        if hasattr(client, "heartbeat"):
+            client.heartbeat()
+        else:
+            client.list_collections()
+    except Exception as exc:
+        raise ChromaError("ChromaDB healthcheck failed") from exc
 
 
 def embed_text(text: str) -> Sequence[float]:

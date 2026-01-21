@@ -11,3 +11,4 @@ ollama
 openai
 logger
 logging
+psycopg[binary]
