@@ -5,7 +5,7 @@ from openai import OpenAI
 import logger
 from typing import Sequence
 
-client = OpenAI()
+# client = OpenAI()
 log = logger.logger
 
 
