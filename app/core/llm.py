@@ -4,9 +4,16 @@ from app.core.config import settings
 from openai import OpenAI
 import logger
 from typing import Sequence
+import httpx
 
 client = OpenAI()
 log = logger.logger
+
+
+async def ollama_healthcheck() -> None:
+    async with httpx.AsyncClient(timeout=1.0) as client:
+        response = await client.get("http://localhost:11434/api/tags")
+        response.raise_for_status()
 
 
 def local_llm(prompt: str) -> str | None:

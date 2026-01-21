@@ -6,8 +6,9 @@ from sqlalchemy.orm import (
     Session,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer
+from sqlalchemy import String, Integer, text
 from app.core.config import settings
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 engine = create_engine(
     url=str(settings.DATABASE_URL),
@@ -59,3 +60,8 @@ SessionLocal = sessionmaker(
 
 def get_session() -> Session:
     return SessionLocal()
+
+
+async def database_healthcheck(engine: AsyncEngine) -> None:
+    async with engine.connect() as connection:
+        await connection.execute(text("SELECT 1"))

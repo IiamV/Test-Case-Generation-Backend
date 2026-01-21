@@ -2,8 +2,20 @@
 import ollama
 from app.core.config import settings, chromadb_client
 from typing import Sequence
+from chromadb.errors import ChromaError
+
 
 collection = chromadb_client.get_or_create_collection(name="requirements")
+
+
+def chromadb_healthcheck(client: chromadb_client) -> None:
+    try:
+        if hasattr(client, "heartbeat"):
+            client.heartbeat()
+        else:
+            client.list_collections()
+    except Exception as exc:
+        raise ChromaError("ChromaDB healthcheck failed") from exc
 
 
 def embed_text(text: str) -> Sequence[float]:
