@@ -1,9 +1,13 @@
 # Dependency declaration
 fastapi
 uvicorn
+pydantic
 pydantic_settings
 python-multipart
+python-dotenv
 chromadb
 sqlalchemy
 ollama
-fastapi
+openai
+logger
+logging
