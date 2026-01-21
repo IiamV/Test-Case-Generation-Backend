@@ -7,7 +7,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer
-from config import settings
+from app.core.config import settings
 
 engine = create_engine(
     url=str(settings.DATABASE_URL),

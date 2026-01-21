@@ -1,6 +1,6 @@
 
 import ollama
-from config import settings, chromadb_client
+from app.core.config import settings, chromadb_client
 from typing import Sequence
 
 collection = chromadb_client.get_or_create_collection(name="requirements")

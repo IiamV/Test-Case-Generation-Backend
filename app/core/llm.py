@@ -1,6 +1,6 @@
 #  This file is for LLM abstraction layer
 import ollama
-from config import settings
+from app.core.config import settings
 from openai import OpenAI
 import logger
 from typing import Sequence
