@@ -6,7 +6,7 @@ import logger
 from typing import Sequence
 import httpx
 
-client = OpenAI()
+# client = OpenAI()
 log = logger.logger
 
 
