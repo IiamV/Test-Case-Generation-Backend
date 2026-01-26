@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.core.database import database_healthcheck
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from app.core.database import engine
+from app.core.database import get_engine
 from app.core.llm import ollama_healthcheck
 from app.core.vector_database import chromadb_healthcheck, chromadb_client
 from chromadb.errors import ChromaError
@@ -46,18 +46,21 @@ async def status():
     vector_ok: bool = True
 
     try:
-        await database_healthcheck(engine)
-    except SQLAlchemyError:
+        await database_healthcheck()
+    except SQLAlchemyError as e:
+        print("Database healthcheck failed:", e)
         db_ok = False
 
     try:
         await ollama_healthcheck()
-    except Exception:
+    except Exception as e:
+        print("LLM healthcheck failed:", e)
         llm_ok = False
 
     try:
-        chromadb_healthcheck(chromadb_client)
-    except ChromaError:
+        chromadb_healthcheck()
+    except ChromaError as e:
+        print("ChromaDB healthcheck failed:", e)
         vector_ok = False
 
     if not db_ok or not llm_ok or not vector_ok:
