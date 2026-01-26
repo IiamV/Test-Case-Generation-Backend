@@ -6,8 +6,7 @@ from fastapi import FastAPI, Request
 from atlassian.jira import Jira
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
-from app.services.jira import get_all_jira_projects
-from app.models.schemas import GetJiraProjectsResponse
+from app.services.jira import get_all_jira_projects, get_all_jira_issues
 from atlassian import Jira
 
 jira_scope = ["read:me", "read:jira-user", "read:jira-work", "offline_access"]
@@ -20,15 +19,11 @@ jira_oauth = OAuth2Client(
     redirect_uri=settings.JIRA_REDIRECT_URL
 )
 
-jira = Jira(
-
-)
-
 
 async def jira_login(request: Request) -> RedirectResponse:
 
     authorization_url, state = jira_oauth.create_authorization_url(
-        url=jira_auth_base_url,
+        jira_auth_base_url,
         audience=jira_audience,
     )
 
@@ -36,7 +31,7 @@ async def jira_login(request: Request) -> RedirectResponse:
     return RedirectResponse(authorization_url)
 
 
-async def jira_callback(request: Request) -> GetJiraProjectsResponse:
+async def jira_callback(request: Request):
 
     token_json = jira_oauth.fetch_token(
         url=jira_token_url,
@@ -53,15 +48,15 @@ async def jira_callback(request: Request) -> GetJiraProjectsResponse:
     #     "expires_at": token_json["expires_at"]
     # })
 
-    projects = get_all_jira_projects(token_json)
+    # token_json = get_all_jira_issues(token_json)
 
-    return projects
+    return token_json
 
 
-async def jira_refresh_access():
+# async def jira_refresh_access():
 
-    jira_oauth.refresh_token(
-        url=jira_token_url,
-        refresh_token=token_json["refresh_token"]
-    )
-    return None
+#     jira_oauth.refresh_token(
+#         url=jira_token_url,
+#         refresh_token=token_json["refresh_token"]
+#     )
+#     return None
