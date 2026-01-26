@@ -17,14 +17,15 @@ chromadb_client = chromadb.Client(
 collection = chromadb_client.get_or_create_collection(name="requirements")
 
 
-def chromadb_healthcheck(client: chromadb_client) -> None:
+def chromadb_healthcheck() -> None:
+
     try:
-        if hasattr(client, "heartbeat"):
-            client.heartbeat()
+        if hasattr(chromadb_client, "heartbeat"):
+            chromadb_client.heartbeat()
         else:
-            client.list_collections()
+            chromadb_client.list_collections()
     except Exception as exc:
-        raise ChromaError("ChromaDB healthcheck failed") from exc
+        raise RuntimeError("ChromaDB healthcheck failed") from exc
 
 
 def embed_text(text: str) -> Sequence[float]:
