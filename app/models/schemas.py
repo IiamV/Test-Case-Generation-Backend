@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from typing import List
 
 
-class SystemResponse(BaseModel):
-    status: str
-    message: str
+class GenericResponse(BaseModel):
+    detail: str
+
+
+class JiraAuthResponse(BaseModel):
+    redirect_url: str
