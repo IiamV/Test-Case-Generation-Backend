@@ -13,7 +13,7 @@ redis_client = redis.Redis(
 
 
 async def redis_healthcheck() -> None:
-    # TO DO: Add await
+    # TODO: Add await
     # Currently can't use await with ping() as it causes Type Error
     # An issue for this was opened on Redis GitHub already
     if redis_client.ping():
@@ -24,12 +24,12 @@ async def redis_healthcheck() -> None:
 
 async def cache_get(key: str):
     try:
+        if not await redis_client.exists(key):
+            return None
+
         result = await redis_client.get(name=key)
     except Exception as e:
         raise Exception(f"Redis Get Failed: {e}")
-
-    if result is None:
-        return None
 
     return json.loads(result)
 
@@ -50,18 +50,3 @@ async def cache_set(key: str, value: Any, expire_at: Optional[int] = None, expir
             await redis_client.expire(name=key, time=expire_in)
     except Exception as e:
         raise Exception(f"Redis Set Failed: {e}")
-
-
-async def cache_get_and_store(key: str, value: str, expire: Optional[int] = None) -> None:
-    try:
-        if await redis_client.exists(key):
-            return await cache_get(key=key)
-
-        if value is None:
-            raise Exception("Value of key is not given for storage.")
-
-        await redis_client.set(name=key, value=value)
-        if expire is not None:
-            await redis_client.expire(name=key, time=expire)
-    except Exception as e:
-        raise Exception(f"Redis Get Failed: {e}")
