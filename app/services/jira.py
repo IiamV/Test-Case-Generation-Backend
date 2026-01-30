@@ -11,17 +11,26 @@ from typing import Dict
 from app.models.jira import AllJiraIssuesResponse
 from app.services.utils import inspect_schema
 from app.models.jira import JiraToken
+from app.core.cache import cache_get
 
 ATLASSIAN_RESOURCES_URL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 
-async def _get_access_token(request: Request) -> str:
-    access_token = request.session.get("jira_access_token")
-    if access_token is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No token json found in session"
-        )
+async def _get_access_token() -> str:
+    try:
+        jira_token = await cache_get(key="jira_token")
+        if jira_token is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Jira user token not found in storage"
+            )
+
+        jira_token = JiraToken.model_validate(jira_token)
+        access_token = jira_token.access_token
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise RuntimeError(f"Failed to get Jira access token: {e}")
     return access_token
 
 
@@ -62,17 +71,16 @@ async def _create_jira_client(access_token: str) -> Jira:
     )
 
 
-async def get_all_jira_projects(request: Request):
-    access_token = await _get_access_token(request)
+async def get_all_jira_projects():
+    access_token = await _get_access_token()
 
     jira = await _create_jira_client(access_token)
     return jira.projects()
 
 
-async def get_all_jira_issues(request: Request):
-    access_token = await _get_access_token(request)
+async def get_all_jira_issues(project_name: str):
+    access_token = await _get_access_token()
 
-    project_name = request.query_params.get("project_name")
     if project_name is None:
         raise HTTPException(
             status_code=404,
@@ -81,6 +89,7 @@ async def get_all_jira_issues(request: Request):
 
     jira = await _create_jira_client(access_token)
 
+    # TODO: May subjugate under SQL Injection
     jql_request = f'project = "{project_name}" ORDER BY issuekey'
     issues = jira.enhanced_jql(
         jql=jql_request,
@@ -93,8 +102,5 @@ async def get_all_jira_issues(request: Request):
             'summary'
         ]
     )
-
-    if issues is None:
-        return AllJiraIssuesResponse(issues=[], isLast=True)
 
     return issues
