@@ -2,11 +2,11 @@ from fastapi import APIRouter
 from app.core.database import database_healthcheck
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from app.core.database import get_engine
 from app.core.llm import ollama_healthcheck
-from app.core.vector_database import chromadb_healthcheck, chromadb_client
+from app.core.vector_database import chromadb_healthcheck
 from chromadb.errors import ChromaError
 from app.models.schemas import SystemResponse
+from app.core.cache import redis_healthcheck
 
 router = APIRouter()
 
@@ -44,6 +44,7 @@ async def status():
     db_ok: bool = True
     llm_ok: bool = True
     vector_ok: bool = True
+    cache_ok: bool = True
 
     try:
         await database_healthcheck()
@@ -63,8 +64,14 @@ async def status():
         print("ChromaDB healthcheck failed:", e)
         vector_ok = False
 
-    if not db_ok or not llm_ok or not vector_ok:
-        errorMessage = f"Database: {db_ok}, LLM: {llm_ok}, Vector: {vector_ok}"
+    try:
+        await redis_healthcheck()
+    except Exception as e:
+        print("Redis healthcheck failed:", e)
+        cache_ok = False
+
+    if not db_ok or not llm_ok or not vector_ok or not cache_ok:
+        errorMessage = f"Database: {db_ok}, LLM: {llm_ok}, Vector: {vector_ok}, Cache: {cache_ok}"
 
         return JSONResponse(
             status_code=503,
@@ -78,6 +85,6 @@ async def status():
         status_code=200,
         content={
             "status": "ok",
-            "message": "Database, LLM, and Vector services healthy"
+            "message": "Database, LLM, Cache and Vector services healthy"
         },
     )
