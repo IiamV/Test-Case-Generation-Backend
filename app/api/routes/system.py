@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.llm import ollama_healthcheck
 from app.core.vector_database import chromadb_healthcheck
 from chromadb.errors import ChromaError
-from app.models.schemas import SystemResponse
+from app.models.schemas import GenericResponse
 from app.core.cache import redis_healthcheck
 
 router = APIRouter()
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.api_route(
     path="/health",
-    response_model=SystemResponse,
+    response_model=GenericResponse,
     summary="Health Check",
     description="Checks the health",
     responses={200: {"description": "Services Healthy"}},
@@ -22,21 +22,19 @@ router = APIRouter()
 )
 async def healthcheck():
     return JSONResponse(
-        status_code=200,
         content={
-            "status": "ok",
-            "message": "Backend is up and running"
+            "detail": "Backend is up and running"
         },
     )
 
 
 @router.api_route(
     path="/status",
-    response_model=SystemResponse,
+    response_model=GenericResponse,
     summary="Services Status Check",
     description="Checks the status of the service (LLM, Database, Vector Database)",
-    responses={200: {"description": "Services Healthy"},
-               503: {"description": "Service Unavailable"}},
+    responses={200: {"model": GenericResponse, "description": "Services Healthy"},
+               503: {"model": GenericResponse, "description": "Service Unavailable"}},
     methods=["GET"],
     response_class=JSONResponse,
 )
@@ -82,9 +80,7 @@ async def status():
         )
 
     return JSONResponse(
-        status_code=200,
         content={
-            "status": "ok",
-            "message": "Database, LLM, Cache and Vector services healthy"
+            "detail": "Database, LLM, Cache and Vector services healthy"
         },
     )
