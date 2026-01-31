@@ -1,15 +1,7 @@
-from fastapi import Request, HTTPException
+from fastapi import HTTPException
 import httpx
-from starlette.middleware.sessions import SessionMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import FastAPI, Request
 from atlassian.jira import Jira
-from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
-import json
-from typing import Dict
-from app.models.jira import AllJiraIssuesResponse
-from app.services.utils import inspect_schema
 from app.models.jira import JiraToken
 from app.core.cache import cache_get
 

@@ -1,9 +1,8 @@
 from fastapi import APIRouter
 from app.services.auth import jira_login, jira_callback
-from app.services.jira import get_all_jira_projects
 from app.models.schemas import JiraAuthResponse
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
+from fastapi import Request
 
 router = APIRouter()
 

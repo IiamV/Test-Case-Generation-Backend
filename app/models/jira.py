@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl, Field
-from typing import List, Optional, Dict, Annotated
+from typing import List, Optional
 
 
 # ==================JIRA ISSUES MODELS===============================================================

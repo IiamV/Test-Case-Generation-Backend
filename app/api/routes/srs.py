@@ -1,5 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Request, HTTPException
-from app.services.generator import generate_tests
+from fastapi import APIRouter, Request
 from app.services.jira import get_all_jira_projects, get_all_jira_issues
 from fastapi.responses import JSONResponse
 from app.models.schemas import GenericResponse

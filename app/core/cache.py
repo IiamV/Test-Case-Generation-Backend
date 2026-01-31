@@ -1,8 +1,6 @@
 import redis.asyncio as redis
-import httpx
 import json
-from typing import Optional, Union, Any, Dict, List
-from app.models.jira import JiraToken
+from typing import Optional, Any
 from pydantic import BaseModel
 
 redis_client = redis.Redis(

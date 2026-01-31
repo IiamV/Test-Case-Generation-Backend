@@ -1,13 +1,10 @@
 from fastapi import Request, HTTPException
-import httpx
-from starlette.middleware.sessions import SessionMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import FastAPI, Request
-from atlassian.jira import Jira
+from fastapi.responses import RedirectResponse
+from fastapi import Request
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
 from app.models.jira import JiraToken
-from app.core.cache import cache_set, cache_get
+from app.core.cache import cache_set
 
 jira_scope = ["read:me", "read:jira-user", "read:jira-work", "offline_access"]
 jira_auth_base_url = "https://auth.atlassian.com/authorize"
@@ -55,12 +52,3 @@ async def jira_callback(request: Request) -> RedirectResponse:
     )
 
     return RedirectResponse("/health")
-
-
-# async def jira_refresh_access():
-
-#     jira_oauth.refresh_token(
-#         url=jira_token_url,
-#         refresh_token=token_json["refresh_token"]
-#     )
-#     return None
