@@ -1,33 +1,32 @@
----
-name: PR-request
-about: This is a template for creating a Pull Request.
-title: "[<commit type>:<scope>] <short summary>."
-labels: ''
-assignees: ''
+<!-- This is a template for creating a PR (Pull Request). -->
 
----
+<!-- Please set your PR title like the example below -->
+<!-- [<type>:<scope>] <short summary>. -->
+
 
 ## Summary
-<Briefly describe what this PR does and why it is needed. Focus on the intent, not implementation details.>
+<!-- Briefly describe what this PR does and why it is needed. Focus on the intent, not implementation details. -->
 
-Closes #<issue-number>  
-Related to #<issue-number>
+<!-- Please choose either 'Closes' or 'Related' -->
+Closes #<!--issue-number-->  
+Related to #<!--issue-number-->  
 
 ## Changes
-<List the main changes introduced>
-<Be explicit and concise>
-<Mention breaking or non-obvious changes>
+<!-- List the main changes introduced -->
+<!-- Be explicit and concise -->
+<!-- Mention breaking or non-obvious changes -->
 
 ## Acceptance Criteria 
-<Please delete this section if this PR is not related to an issue.>
+<!-- Please delete this section if this PR is not related to an issue. -->
 - [ ] Criteria 1
 - [ ] Criteria 2
 - [ ] Criteria 3
 
 ## Checklist
-- [ ] Code compiles and passes all tests
-- [ ] Linting / formatting passes
-- [ ] A self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] My changes generate no new warnings
-- [ ] Any dependent changes have been merged and published in downstream modules
+<!-- Please do not delete any part of this section. -->
+- [ ] Code compiles and passes all tests.
+- [ ] Linting / formatting passes.
+- [ ] A self-review of my own code.
+- [ ] I have commented my code, particularly in hard-to-understand areas.
+- [ ] My changes generate no new warnings.
+- [ ] Any dependent changes have been merged and published in downstream modules.
