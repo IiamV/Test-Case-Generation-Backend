@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List, Any
-from app.models.enum import OllamaChatResponsePropertiesType, OllamaChatResponsePropertiesPriority
+from app.models.enums import OllamaChatResponsePropertiesType, OllamaChatResponsePropertiesPriority
 
 # ==============================OLLAMA LIST==============================================
 
