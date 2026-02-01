@@ -24,6 +24,11 @@ cd Test-Case-Generation-Backend
 pip install -r requirements.txt
 ```
 
+### Pulling the ollama model
+Pull any model name that your `.env` is using
+```bash
+ollama pull <model_name>
+```
 <hr>
 
 # Run the backend

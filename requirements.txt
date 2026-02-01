@@ -1,14 +1,30 @@
 # Dependency declaration
+
+# Webservice
+python-dotenv
+pydantic
 fastapi
 uvicorn
-pydantic
+httpx
+
+# LLM
+ollama
+
+# Database
+sqlalchemy
+sqlalchemy_utils
+sqlalchemy[asyncio]
+asyncpg
+
+
+# Vector Database
+chromadb
+
+# Extras
+logger
+
+# Currently undocumented
+logging
+psycopg2-binary
 pydantic_settings
 python-multipart
-python-dotenv
-chromadb
-sqlalchemy
-ollama
-openai
-logger
-logging
-psycopg[binary]
