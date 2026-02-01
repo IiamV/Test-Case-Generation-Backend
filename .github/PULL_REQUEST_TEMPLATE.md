@@ -7,9 +7,9 @@
 ## Summary
 <!-- Briefly describe what this PR does and why it is needed. Focus on the intent, not implementation details. -->
 
-<!-- Please choose either 'Closes' or 'Related' -->
-Closes #<!--issue-number-->  
-Related to #<!--issue-number-->  
+<!-- Please choose either option below if this PR is connected to an issue. -->
+<!-- Closes #<issue-number> -->
+<!-- Related to #<issue-number> -->
 
 ## Changes
 <!-- List the main changes introduced -->
