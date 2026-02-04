@@ -114,10 +114,10 @@ async def get_ollama_model() -> str:
     """
 
     # Resolve the LLM model name based on Ollama authentication configuration
-    if settings.OLLAMA_API_KEY is None:
+    if settings.OLLAMA_API_KEY is not None:
         return settings.LOCAL_LLM_MODEL
 
-    return settings.LOCAL_LLM_MODEL
+    return settings.CUSTOM_LLM_MODEL
 
 
 async def ollama_healthcheck() -> None:
