@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 
 
+# Load environment variables from .env into process environment
 load_dotenv()
 
 
@@ -36,4 +37,5 @@ class Settings(BaseSettings):
     JIRA_REDIRECT_URL: str | None = os.getenv("JIRA_REDIRECT_URL")
 
 
+# Singleton settings instance shared across the application
 settings = Settings()
