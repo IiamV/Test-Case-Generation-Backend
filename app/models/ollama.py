@@ -46,5 +46,5 @@ class OllamaChatResponse(BaseModel):
 
 
 class OllamaChatRequest(BaseModel):
-    prompt: str
-    think: bool
+    issue_descriptions: List[str]
+    think: Optional[bool] = False

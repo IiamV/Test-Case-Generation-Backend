@@ -1,8 +1,7 @@
-# Dependency declaration
-
 # Webservice
 python-dotenv
 pydantic
+pydantic-settings
 fastapi
 uvicorn
 httpx
@@ -16,15 +15,15 @@ sqlalchemy_utils
 sqlalchemy[asyncio]
 asyncpg
 
+# Memory
+redis[hiredis]
 
 # Vector Database
 chromadb
 
 # Extras
-logger
-
-# Currently undocumented
-logging
-psycopg2-binary
-pydantic_settings
-python-multipart
+atlassian-python-api
+Werkzeug
+authlib
+itsdangerous
+xlsxwriter
