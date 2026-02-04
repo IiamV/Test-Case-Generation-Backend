@@ -17,6 +17,7 @@ For each step:
 - input_data MUST NOT be null if data is required
 
 Rules:
+- Return JSON with a top-level key named "testcases".
 - Do not include comments, explanations, trailing commas, or extra characters.
 - Use ASCII characters only.
 - Must fill every field of the JSON model, if it's empty, must leave it as empty string.
