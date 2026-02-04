@@ -1,6 +1,7 @@
 # Configuration management
 from pydantic_settings import BaseSettings
 import os
+from typing import Optional
 from dotenv import load_dotenv
 
 
@@ -10,11 +11,12 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # FastAPI settings
-    FASTAPI_SECRET_KEY: str | None = os.getenv("FASTAPI_SECRET_KEY")
+    FASTAPI_SECRET_KEY: Optional[str] = os.getenv("FASTAPI_SECRET_KEY")
 
     # LLM settings
     OLLAMA_HOST: str = os.getenv(
         "OLLAMA_HOST", 'http://localhost:11434')
+    OLLAMA_API_KEY: Optional[str] = os.getenv("OLLAMA_API_KEY")
     LOCAL_LLM_MODEL: str = os.getenv(
         "LOCAL_LLM_MODEL", 'tinyllama:latest')
     LOCAL_EMBED_MODEL: str = os.getenv(
@@ -23,18 +25,18 @@ class Settings(BaseSettings):
         "CUSTOM_LLM_MODEL", 'swd-model:latest')
 
     # Database settings
-    DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+    DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
 
     # Cache settings
-    REDIS_USERNAME: str | None = os.getenv("REDIS_USERNAME")
-    REDIS_PASSWORD: str | None = os.getenv("REDIS_PASSWORD")
+    REDIS_USERNAME: Optional[str] = os.getenv("REDIS_USERNAME")
+    REDIS_PASSWORD: Optional[str] = os.getenv("REDIS_PASSWORD")
     REDIS_HOST: str = os.getenv("REDIS_HOST", 'localhost')
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
 
     # Jira settings
-    JIRA_CLIENT_ID: str | None = os.getenv("JIRA_CLIENT_ID")
-    JIRA_SECRET: str | None = os.getenv("JIRA_SECRET")
-    JIRA_REDIRECT_URL: str | None = os.getenv("JIRA_REDIRECT_URL")
+    JIRA_CLIENT_ID: Optional[str] = os.getenv("JIRA_CLIENT_ID")
+    JIRA_SECRET: Optional[str] = os.getenv("JIRA_SECRET")
+    JIRA_REDIRECT_URL: Optional[str] = os.getenv("JIRA_REDIRECT_URL")
 
 
 # Singleton settings instance shared across the application

@@ -33,7 +33,10 @@ Rules:
 
 # Shared async Ollama client configured via application settings
 ollama_client = AsyncClient(
-    host=settings.OLLAMA_HOST
+    host=settings.OLLAMA_HOST,
+    headers={
+        "Authorization": f"Bearer {settings.OLLAMA_API_KEY}"
+    }
 )
 
 
