@@ -28,7 +28,12 @@ async def generate_tests(request: OllamaChatRequest) -> Optional[Dict[str, Any]]
     print(content)
     # Parse and return the LLM-generated JSON payload if present
     if content and content.message and content.message.content:
-        return json.loads(content.message.content)
+        raw = json.loads(content.message.content)
 
+    if isinstance(raw, list):
+        return {"testcases": raw}
+
+    if isinstance(raw, dict):
+        return raw
     # Explicitly return None when no valid LLM output is produced
     return None
