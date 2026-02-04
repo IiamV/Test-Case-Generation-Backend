@@ -7,9 +7,8 @@ from app.models.ollama import OllamaChatResponse
 
 router = APIRouter()
 
+
 # Endpoint to export generated testcases into an Excel file
-
-
 @router.api_route(
     path="/export-excel",
     response_model=ExportExcelResponse,
