@@ -25,6 +25,7 @@ async def generate_tests(request: OllamaChatRequest) -> Optional[Dict[str, Any]]
         think=request.think
     )
 
+    print(content)
     # Parse and return the LLM-generated JSON payload if present
     if content and content.message and content.message.content:
         return json.loads(content.message.content)
