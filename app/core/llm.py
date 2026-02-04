@@ -6,7 +6,7 @@ import httpx
 import traceback
 from app.models.ollama import OllamaChatResponse
 
-# System prompt injected into the custom Ollama model to constrain behavior
+# System prompt injected into the custom local Ollama model to constrain behavior
 SWD_MODEL_SYSTEM_PROMPT = """
 You are a test engineering assistant specialized in deriving system-level test cases from software requirements.
 Your task is to analyze provided requirements and produce complete, unambiguous system test cases. Output MUST be valid JSON only
@@ -42,12 +42,19 @@ ollama_client = AsyncClient(
 
 async def ollama_init() -> None:
     """
-    Initialize Ollama by ensuring required base and custom models exist locally.
+    Initializes the Ollama client by ensuring the required base, embedding, and custom models exist locally.
 
-    This function verifies the presence of the base LLM model, the embedding model, and the derived custom model.
-    If any of the required models are missing, it will attempt to pull them from the public Ollama model repository.
-    If the custom model does not exist, it will create it with a fixed system prompt that constrains the model's behavior.
+    If the OLLAMA_API_KEY is set, this function does nothing.
+
+    Otherwise, it checks for the presence of the required models and pulls them from the Ollama cloud if they are missing.
+    If the custom model does not exist, it is created with a fixed system prompt.
+
+    Raises:
+        RuntimeError: If the Ollama initialization fails for any reason.
     """
+
+    if settings.OLLAMA_API_KEY is not None:
+        return None
 
     # Initialize Ollama by ensuring required base and custom models exist locally
     llm_ok: bool = False      # Tracks presence of base LLM model
@@ -95,6 +102,24 @@ async def ollama_init() -> None:
     return None
 
 
+async def get_ollama_model() -> str:
+    """
+    Resolve the LLM model name based on Ollama authentication configuration.
+
+    If no Ollama API key is provided, the function returns the name of the local LLM model.
+    Otherwise, it returns the name of the local LLM model.
+
+    Returns:
+        str: The name of the LLM model to use.
+    """
+
+    # Resolve the LLM model name based on Ollama authentication configuration
+    if settings.OLLAMA_API_KEY is None:
+        return settings.LOCAL_LLM_MODEL
+
+    return settings.LOCAL_LLM_MODEL
+
+
 async def ollama_healthcheck() -> None:
     """
     Check the health status of the OLLAMA server.
@@ -124,7 +149,7 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
 
     # Send user requirements to the custom Ollama model and enforce schema-valid JSON output
     response = await ollama_client.chat(
-        model=str(settings.CUSTOM_LLM_MODEL),
+        model=await get_ollama_model(),
         messages=[
             {
                 "role": "user",
