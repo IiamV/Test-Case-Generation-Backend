@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 # ==================JIRA ISSUES MODELS===============================================================
@@ -60,6 +60,6 @@ class JiraProject(BaseModel):
     simplified: bool
     style: str
     isPrivate: bool
-    properties: List
+    properties: Dict[str, Any]
     entityId: Optional[str] = None
     uuid: Optional[str] = None
