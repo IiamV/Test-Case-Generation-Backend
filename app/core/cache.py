@@ -2,11 +2,14 @@ import redis.asyncio as redis
 import json
 from typing import Optional, Any
 from pydantic import BaseModel
+from app.core.config import settings
 
 redis_client = redis.Redis(
-    host='localhost',
-    port=6379,
-    decode_responses=True
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    password=settings.REDIS_PASSWORD,
+    decode_responses=True,
+    # ssl=True
 )
 
 
