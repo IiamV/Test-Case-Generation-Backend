@@ -11,7 +11,7 @@ from app.core.llm import ollama_init
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize external dependencies during application startup
-    await ollama_init()
+    # await ollama_init()
     yield
 
 
