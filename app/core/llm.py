@@ -7,7 +7,7 @@ import traceback
 from app.models.ollama import OllamaChatResponse
 
 # System prompt injected into the custom local Ollama model to constrain behavior
-SWD_MODEL_SYSTEM_PROMPT = """
+OLLAMA_SYSTEM_PROMPT = """
 You are a test engineering assistant specialized in deriving system-level test cases from software requirements.
 Your task is to analyze provided requirements and produce complete, unambiguous system test cases. Output MUST be valid JSON only
 
@@ -17,6 +17,7 @@ For each step:
 - inputData MUST NOT be null if data is required
 
 Rules:
+- Do NOT ask for anything, this is a one time chat session.
 - Generate ONLY test cases directly traceable to the provided requirements.
 - DO NOT generate test cases about test cases, test suites, output format, or instructions.
 - Do NOT include code, code snippets, function calls, or pseudo-code in any field.
@@ -92,7 +93,7 @@ async def ollama_init() -> None:
             await ollama_client.create(
                 model=str(settings.CUSTOM_LLM_MODEL),
                 from_=str(settings.LOCAL_LLM_MODEL),
-                system=SWD_MODEL_SYSTEM_PROMPT
+                system=OLLAMA_SYSTEM_PROMPT
             )
     except Exception as e:
         # Log stack trace for diagnostics and propagate a domain-specific failure
@@ -151,6 +152,10 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
     response = await ollama_client.chat(
         model=await get_ollama_model(),
         messages=[
+            {
+                "role": "system",
+                "content": OLLAMA_SYSTEM_PROMPT
+            },
             {
                 "role": "user",
                 "content": f"Requirements: \n{prompt}"
