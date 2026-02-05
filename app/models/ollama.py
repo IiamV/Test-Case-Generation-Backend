@@ -33,8 +33,8 @@ class OllamaChatResponsePropertiesSteps(BaseModel):
 class OllamaChatResponseProperties(BaseModel):
     id: str
     title: str
-    type: OllamaChatResponsePropertiesType
-    priority: OllamaChatResponsePropertiesPriority
+    type: Optional[OllamaChatResponsePropertiesType]
+    priority: Optional[OllamaChatResponsePropertiesPriority]
     preconditions: Optional[List[str]]
     steps: List[OllamaChatResponsePropertiesSteps]
     expected_result: List[str]
