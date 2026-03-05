@@ -9,14 +9,14 @@ router = APIRouter()
 
 @router.api_route(
     path="/testcases",
-    response_model=OllamaChatResponse,
+    # response_model=OllamaChatResponse,
     summary="Generate Testcases",
     description="Generate testcases from Jira issues using LLMs",
-    responses={200: {"model": OllamaChatResponse,
-                     "description": "Testcases Successfully Generated"}},
+    # responses={200: {"model": OllamaChatResponse,
+    #                  "description": "Testcases Successfully Generated"}},
     methods=["POST"],
     response_class=JSONResponse,
 )
-async def get_testcases(request: OllamaChatRequest):
+async def get_testcases(collectionId: str, request: OllamaChatRequest):
     # Delegate request handling to the LLM service layer
-    return await generate_tests(request=request)
+    return await generate_tests(collectionId=collectionId, request=request)
