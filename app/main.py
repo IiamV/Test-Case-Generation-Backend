@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.api.routes import llm, system, srs, auth, export
+from app.api.routes import llm, system, srs, auth, export, postman
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.llm import ollama_init
@@ -44,3 +44,5 @@ app.include_router(llm.router, tags=["Testcases Generation"])
 
 # Testcase export endpoints
 app.include_router(export.router, tags=["Export"])
+
+app.include_router(postman.router, tags=["Postman"], prefix="/postman")
