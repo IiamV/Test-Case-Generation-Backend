@@ -5,46 +5,109 @@ from typing import List, Optional
 import httpx
 import traceback
 from app.models.ollama import OllamaChatResponse
+from app.models.postman import PostmanRequest
+from typing import List
+from pydantic import TypeAdapter
 
 # System prompt injected into the custom Ollama model to constrain behavior
 SWD_MODEL_SYSTEM_PROMPT = """
-You are a test engineering assistant specialized in deriving system-level test cases from software requirements.
-Your task is to analyze provided requirements and produce complete, unambiguous system test cases. Output MUST be valid JSON only
+You are an API request generation assistant.
 
-For each step:
-- inputData MUST contain the literal data values entered or used
-- action MUST describe the user/system behavior WITHOUT embedding data
-- inputData MUST NOT be null if data is required
+Your task is to generate HTTP request definitions that strictly conform to the provided JSON schema for a list of PostmanRequest objects.
 
-Rules:
-- Generate ONLY test cases directly traceable to the provided requirements.
-- DO NOT generate test cases about test cases, test suites, output format, or instructions.
-- Do NOT include code, code snippets, function calls, or pseudo-code in any field.
-- Use descriptive IDs like "TC-001". Use titles with spaces (no underscores).
-- Actions must be human-executable instructions (e.g., "Enter 'user@example.com' into Email field and click Login").
-- Use clear, deterministic language suitable for QA automation or manual execution.
-- Generate only system-level (black-box) testcases derived from the requirements provided.
-- Do not include implementation details or internal design assumptions.
-- Do not explain your reasoning or include commentary.
-- If a required field cannot be determined, set it to an empty array, null, or boolean false as appropriate — do not invent extra facts.
-- Stop generation once all requirements are covered.
+CRITICAL OUTPUT RULES:
+
+- Output MUST be valid JSON.
+- The top-level output MUST be a JSON array.
+- Each element in the array MUST strictly match the PostmanRequest schema.
+- Do NOT output a single object. Always output an array.
+- Do NOT include explanations, comments, markdown, or code fences.
+- Do NOT include fields not defined in the schema.
+- Do NOT omit required fields.
+- If an optional field is not applicable, set it to null.
+- If no query parameters are required, set "queryParams" to null.
+- Stop once all API operations described in the requirements are represented.
+
+SCHEMA CONSTRAINTS:
+
+Each PostmanRequest object MUST contain:
+- name: string
+- description: string or null
+- url: string (absolute URL)
+- method: string
+- headers: array of { key: string, value: string }
+- queryParams: array of {
+      key: string,
+      value: string,
+      equals: boolean,
+      description: string or null,
+      enabled: boolean
+  } OR null
+- dataMode: string
+- rawModeData: string or null
+- dataOptions: {
+      raw: {
+          language: string
+      }
+  }
+
+HTTP METHOD RULES:
+
+For GET requests:
+- method MUST be "GET"
+- rawModeData MUST be null
+- dataMode MUST still be provided
+- Query parameters MUST be defined in "queryParams" (not embedded only in URL)
+
+For POST requests:
+- method MUST be "POST"
+- dataMode MUST be "raw"
+- rawModeData MUST contain a valid JSON string when a body is required
+- dataOptions.raw.language MUST be "json"
+
+HEADER RULES:
+
+- headers MUST always be a properly structured array.
+- Include realistic HTTP headers.
+- Do not include duplicate header keys.
+
+STRICT BEHAVIORAL RULES:
+
+- Generate only requests directly supported by the provided requirements.
+- Do not invent endpoints.
+- Do not generate test cases.
+- Do not generate metadata.
+- Do not describe your reasoning.
+- Do not output anything outside the JSON array.
+
+The output must be directly validatable against the provided JSON schema without modification.
 """
 
 
 # Shared async Ollama client configured via application settings
 ollama_client = AsyncClient(
-    host=settings.OLLAMA_HOST
+    host=settings.OLLAMA_HOST,
+    headers={
+        "Authorization": f"Bearer {settings.OLLAMA_API_KEY}"
+    }
 )
 
 
 async def ollama_init() -> None:
     """
-    Initialize Ollama by ensuring required base and custom models exist locally.
+    Initializes the Ollama client by ensuring the required base, embedding, and custom models exist locally.
 
-    This function verifies the presence of the base LLM model, the embedding model, and the derived custom model.
-    If any of the required models are missing, it will attempt to pull them from the public Ollama model repository.
-    If the custom model does not exist, it will create it with a fixed system prompt that constrains the model's behavior.
+    If the OLLAMA_API_KEY is set, this function does nothing.
+
+    Otherwise, it checks for the presence of the required models and pulls them from the Ollama cloud if they are missing.
+    If the custom model does not exist, it is created with a fixed system prompt.
+
+    Raises:
+        RuntimeError: If the Ollama initialization fails for any reason.
     """
+
+    if settings.OLLAMA_API_KEY is not None:
+        return None
 
     # Initialize Ollama by ensuring required base and custom models exist locally
     llm_ok: bool = False      # Tracks presence of base LLM model
@@ -92,6 +155,24 @@ async def ollama_init() -> None:
     return None
 
 
+async def get_ollama_model() -> str:
+    """
+    Resolve the LLM model name based on Ollama authentication configuration.
+
+    If no Ollama API key is provided, the function returns the name of the local LLM model.
+    Otherwise, it returns the name of the local LLM model.
+
+    Returns:
+        str: The name of the LLM model to use.
+    """
+
+    # Resolve the LLM model name based on Ollama authentication configuration
+    if settings.OLLAMA_API_KEY is not None:
+        return settings.LOCAL_LLM_MODEL
+
+    return settings.CUSTOM_LLM_MODEL
+
+
 async def ollama_healthcheck() -> None:
     """
     Check the health status of the OLLAMA server.
@@ -104,7 +185,7 @@ async def ollama_healthcheck() -> None:
         response.raise_for_status()
 
 
-async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatResponse:
+async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> List[PostmanRequest]:
     """
     Interact with the local OLLAMA server to generate testcases from provided requirements.
 
@@ -119,10 +200,16 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
         ValueError: If the local LLM returns no response.
     """
 
+    schema = TypeAdapter(List[PostmanRequest])
+
     # Send user requirements to the custom Ollama model and enforce schema-valid JSON output
     response = await ollama_client.chat(
-        model=str(settings.CUSTOM_LLM_MODEL),
+        model=await get_ollama_model(),
         messages=[
+            {
+                "role": "system",
+                "content": SWD_MODEL_SYSTEM_PROMPT
+            },
             {
                 "role": "user",
                 "content": f"Requirements: \n{prompt}"
@@ -131,30 +218,15 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
         tools=None,
         stream=False,
         think=think,
-        format=OllamaChatResponse.model_json_schema()
+        format=schema.json_schema()
     )
 
     # Fail fast if the LLM returns no response
     if response is None:
         raise ValueError("No Local LLM Response from Core LLM")
 
+    if response and response.message and response.message.content:
+        requests_list = schema.validate_json(response.message.content)
+
     # Return structured response
-    return response
-
-
-# def api_llm(prompt: str) -> str:
-#     response = client.chat.completions.create(
-#         model='openai/gpt-oss-120b:free',
-#         messages=[
-#             {
-#                 "role": "user",
-#                 "content": prompt
-#             }
-#         ]
-#     )
-
-#     return f"LLM response for: {response}"
-
-
-# if __name__ == "__main__":
-#     local_llm("What is today's date?")
+    return requests_list
