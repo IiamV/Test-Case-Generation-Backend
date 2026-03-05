@@ -17,3 +17,18 @@ class OllamaChatResponsePropertiesPriority(Enum):
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+
+class PostmanAgentFrameworks(Enum):
+    OPENAI = "openai"
+    MISTRAL = "mistral"
+    GEMINI = "gemini"
+    ANTHROPIC = "anthropic"
+    LANGCHAIN = "langchain"
+    AUTOGEN = "autogen"
+
+
+class PostmanLanguages(Enum):
+    PYTHON = "python"
+    JAVASCRIPT = "javascript"
+    TYPESCRIPT = "typescript"
