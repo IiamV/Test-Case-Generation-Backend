@@ -85,8 +85,9 @@ async def cache_set(
 
     # Store a JSON-serializable value in Redis with optional expiration
     try:
-        if await redis_client.exists(key):
-            return
+        # Always set/overwrite the value. Previously we returned early when the
+        # key existed which prevented updating stored Jira tokens during OAuth
+        # callback flows. Overwrite helps refresh expired tokens.
 
         if isinstance(value, BaseModel):
             value = value.model_dump()

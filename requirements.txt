@@ -27,3 +27,4 @@ Werkzeug
 authlib
 itsdangerous
 xlsxwriter
+pdfplumber

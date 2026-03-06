@@ -8,79 +8,41 @@ from app.models.ollama import OllamaChatResponse
 from app.models.postman import PostmanRequest
 from typing import List
 from pydantic import TypeAdapter
+import logging
 
 # System prompt injected into the custom Ollama model to constrain behavior
 SWD_MODEL_SYSTEM_PROMPT = """
 You are an API request generation assistant.
 
-Your task is to generate HTTP request definitions that strictly conform to the provided JSON schema for a list of PostmanRequest objects.
+IMPORTANT — STRICT JSON ONLY:
 
-CRITICAL OUTPUT RULES:
+- Your ONLY output must be a single JSON array (e.g. [ { ... }, { ... } ]). Do NOT output anything else.
+- Use valid JSON syntax only: strings must use double quotes, objects/arrays must be properly closed, and escape characters must be correct.
+- Do NOT use single quotes for strings. Do NOT include trailing commas.
+- Do NOT include explanations, markdown, comments, or any text outside the JSON array.
+- If you cannot produce valid JSON, output an empty array: []
 
-- Output MUST be valid JSON.
-- The top-level output MUST be a JSON array.
-- Each element in the array MUST strictly match the PostmanRequest schema.
-- Do NOT output a single object. Always output an array.
-- Do NOT include explanations, comments, markdown, or code fences.
-- Do NOT include fields not defined in the schema.
-- Do NOT omit required fields.
-- If an optional field is not applicable, set it to null.
-- If no query parameters are required, set "queryParams" to null.
-- Stop once all API operations described in the requirements are represented.
-
-SCHEMA CONSTRAINTS:
-
-Each PostmanRequest object MUST contain:
+SCHEMA REQUIREMENTS (each element must match exactly):
 - name: string
 - description: string or null
 - url: string (absolute URL)
 - method: string
-- headers: array of { key: string, value: string }
-- queryParams: array of {
-      key: string,
-      value: string,
-      equals: boolean,
-      description: string or null,
-      enabled: boolean
-  } OR null
+- headers: array of { key: string, value: string } (or empty array)
+- queryParams: array of { key:string, value:string, equals:boolean, description:string|null, enabled:boolean } OR null
 - dataMode: string
 - rawModeData: string or null
-- dataOptions: {
-      raw: {
-          language: string
-      }
-  }
+- dataOptions: { raw: { language: string } }
 
-HTTP METHOD RULES:
+RULES BY HTTP METHOD:
+- GET: method must be "GET", rawModeData must be null, queryParams must list params (or be null).
+- POST: method must be "POST", dataMode must be "raw", rawModeData must be a valid JSON string when body required, dataOptions.raw.language must be "json".
 
-For GET requests:
-- method MUST be "GET"
-- rawModeData MUST be null
-- dataMode MUST still be provided
-- Query parameters MUST be defined in "queryParams" (not embedded only in URL)
+ADDITIONAL RULES:
+- Do not invent endpoints or fields not in the schema.
+- If a field is optional and not applicable, set it to null.
+- Ensure array output validates against the provided JSON schema exactly.
 
-For POST requests:
-- method MUST be "POST"
-- dataMode MUST be "raw"
-- rawModeData MUST contain a valid JSON string when a body is required
-- dataOptions.raw.language MUST be "json"
-
-HEADER RULES:
-
-- headers MUST always be a properly structured array.
-- Include realistic HTTP headers.
-- Do not include duplicate header keys.
-
-STRICT BEHAVIORAL RULES:
-
-- Generate only requests directly supported by the provided requirements.
-- Do not invent endpoints.
-- Do not generate test cases.
-- Do not generate metadata.
-- Do not describe your reasoning.
-- Do not output anything outside the JSON array.
-
-The output must be directly validatable against the provided JSON schema without modification.
+Failure behavior: If you cannot comply, return [] (an empty array) and nothing else.
 """
 
 
@@ -226,7 +188,21 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> List[Postm
         raise ValueError("No Local LLM Response from Core LLM")
 
     if response and response.message and response.message.content:
-        requests_list = schema.validate_json(response.message.content)
+        raw = response.message.content
+        try:
+            requests_list = schema.validate_json(raw)
+        except Exception:
+            # Try to extract a JSON array substring from the raw output
+            try:
+                start = raw.index("[")
+                end = raw.rindex("]") + 1
+                snippet = raw[start:end]
+                requests_list = schema.validate_json(snippet)
+            except Exception:
+                logging.exception("Failed to validate LLM JSON output")
+                # Provide a helpful error containing a snippet of the raw output
+                preview = (raw[:1000] + "...") if len(raw) > 1000 else raw
+                raise ValueError(f"LLM returned invalid JSON. Preview: {preview}")
 
     # Return structured response
     return requests_list

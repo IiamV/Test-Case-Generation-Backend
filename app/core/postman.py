@@ -15,34 +15,36 @@ POSTMAN_URLS = {
     'postbot': 'https://api.getpostman.com/postbot/generations/tool',
 }
 
-HEADERS: dict = {
-    'X-Api-Key': settings.POSTMAN_API_KEY
-}
+def _build_headers(api_key: str | None = None) -> dict:
+    key = api_key or settings.POSTMAN_API_KEY
+    return {"X-Api-Key": key} if key else {}
 
 
-def get_all_collections():
-    response = requests.get(url=POSTMAN_URLS['collections'], headers=HEADERS)
+def get_all_collections(api_key: str | None = None):
+    headers = _build_headers(api_key)
+    response = requests.get(url=POSTMAN_URLS['collections'], headers=headers)
     return response.json()
 
 
-def get_collection(collection_id: str):
-    response = requests.get(
-        url=f"{POSTMAN_URLS['collections']}/{collection_id}", headers=HEADERS)
+def get_collection(collection_id: str, api_key: str | None = None):
+    headers = _build_headers(api_key)
+    response = requests.get(url=f"{POSTMAN_URLS['collections']}/{collection_id}", headers=headers)
     return response.json()
 
 
-def get_all_workspaces():
-    response = requests.get(url=POSTMAN_URLS['workspaces'], headers=HEADERS)
+def get_all_workspaces(api_key: str | None = None):
+    headers = _build_headers(api_key)
+    response = requests.get(url=POSTMAN_URLS['workspaces'], headers=headers)
     return response.json()
 
 
-async def create_request(collection_id: str, payload: Any) -> Any:
+async def create_request(collection_id: str, payload: Any, api_key: str | None = None) -> Any:
     url = f"{POSTMAN_URLS['collections']}/{collection_id}/requests"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(
             url=url,
-            headers=HEADERS,
+            headers=_build_headers(api_key),
             json=payload,
         )
         response.raise_for_status()
@@ -59,8 +61,9 @@ def get_all_requestIds(collection_id: str):
     return result
 
 
-def get_user():
-    response = requests.get(url=POSTMAN_URLS['user'], headers=HEADERS)
+def get_user(api_key: str | None = None):
+    headers = _build_headers(api_key)
+    response = requests.get(url=POSTMAN_URLS['user'], headers=headers)
     return response.json()
 
 
@@ -82,7 +85,7 @@ def postbot_generate(
 
     response = requests.post(
         url=POSTMAN_URLS['postbot'],
-        headers=HEADERS,
+        headers=_build_headers(),
         json=POSTBOT_PAYLOAD
     )
 

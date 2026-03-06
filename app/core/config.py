@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     REDIS_HOST: str = os.getenv("REDIS_HOST", 'localhost')
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
 
+    # Frontend settings
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173/health")
+
     # Jira settings
     JIRA_CLIENT_ID: Optional[str] = os.getenv("JIRA_CLIENT_ID")
     JIRA_SECRET: Optional[str] = os.getenv("JIRA_SECRET")

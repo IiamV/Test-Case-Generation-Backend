@@ -2,8 +2,9 @@
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.api.routes import llm, system, srs, auth, export, postman
+from app.api.routes import llm, system, srs, auth, export, postman, jira
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.llm import ollama_init
 
@@ -30,11 +31,21 @@ app.add_middleware(
     # https_only=False,  # True in production with HTTPS
 )
 
+# CORS middleware for cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins in development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # System health endpoints
 app.include_router(system.router, tags=["System"])
 
 # Jira and SRS integration endpoints
 app.include_router(srs.router, tags=["Jira Services"])
+app.include_router(jira.router, tags=["Jira"], prefix="/jira")
 
 # Authentication and authorization endpoints
 app.include_router(auth.router, tags=["Authentication"])

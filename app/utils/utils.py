@@ -104,3 +104,57 @@ async def format_issue_descriptions(issue_descriptions: List[str]) -> List[str]:
         result.append(formatted)
 
     return result
+
+
+def parse_requirements_from_text(text: str) -> List[str]:
+    """Parse requirements from Jira formatted issue description.
+    
+    Handles:
+    - Jira headers (h3., h4., etc)
+    - Bullet points (*, -, **)
+    - AC:/Requirement: prefixes
+    
+    Returns list of requirement strings.
+    """
+    import re
+    
+    if not text:
+        return []
+    
+    lines = text.splitlines()
+    requirements = []
+    
+    # Match Jira headers (h1., h2., h3., etc) or bullet points
+    jira_header_rx = re.compile(r"^h[1-6]\.\s*(.+)", re.IGNORECASE)
+    bullet_rx = re.compile(r"^\s*(?:[-*•\*]|\d+\.|AC:|Requirement:)\s*(.+)", re.IGNORECASE)
+    
+    for line in lines:
+        # Check for Jira header
+        if jira_header_rx.match(line):
+            match = jira_header_rx.match(line)
+            if match:
+                title = match.group(1).strip()
+                if title and len(title) > 3:
+                    requirements.append(title)
+            continue
+        
+        # Check for bullet points
+        if bullet_rx.match(line):
+            match = bullet_rx.match(line)
+            if match:
+                text_part = match.group(1).strip()
+                # Remove Jira markup
+                text_part = re.sub(r'\*{2,}', '', text_part)
+                text_part = text_part.replace('{{', '').replace('}}', '')
+                if text_part and len(text_part) > 3:
+                    requirements.append(text_part)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_reqs = []
+    for req in requirements:
+        if req not in seen:
+            unique_reqs.append(req)
+            seen.add(req)
+    
+    return unique_reqs
