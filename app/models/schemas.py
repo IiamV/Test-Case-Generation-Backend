@@ -10,3 +10,11 @@ class GenericResponse(BaseModel):
 
 class JiraAuthResponse(BaseModel):
     redirect_url: str
+
+
+class PostmanAPIKeyRequest(BaseModel):
+    api_key: str
+
+
+class TokenResponse(BaseModel):
+    token: str

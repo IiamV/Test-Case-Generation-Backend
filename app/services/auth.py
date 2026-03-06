@@ -1,10 +1,11 @@
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, Cookie
+from typing import Optional
 from fastapi.responses import RedirectResponse
-from fastapi import Request
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
 from app.models.jira import JiraToken
-from app.core.cache import cache_set
+from app.core.cache import cache_set, cache_get
+import secrets
 
 jira_scope = ["read:me", "read:jira-user", "read:jira-work", "offline_access"]
 jira_auth_base_url = "https://auth.atlassian.com/authorize"
@@ -45,10 +46,43 @@ async def jira_callback(request: Request) -> RedirectResponse:
     )
 
     jira_token = JiraToken.model_validate(token_json)
+    session_token = generate_token()
+
     await cache_set(
-        key="jira_token",
-        value=jira_token,
+        key=session_token,
+        value={
+            "jira": jira_token,
+            "postman": None
+        },
         expire_at=jira_token.expires_at
     )
 
-    return RedirectResponse("/health")
+    response = RedirectResponse("/health")
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+
+    return response
+
+
+async def postman_connect(session_token: str, key: str) -> Optional[bool]:
+    session = await cache_get(session_token)
+
+    if not session:
+        return None
+
+    session['postman'] = key
+
+    await cache_set(
+        key=session_token,
+        value=session
+    )
+    return True
+
+
+def generate_token() -> str:
+    return secrets.token_urlsafe(32)
