@@ -6,6 +6,7 @@ from app.api.routes import llm, system, srs, auth, export, postman
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.llm import ollama_init
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -21,7 +22,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Session middleware for stateful authentication and user context
 app.add_middleware(
     SessionMiddleware,

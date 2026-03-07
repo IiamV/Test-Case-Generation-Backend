@@ -2,6 +2,9 @@ from fastapi import Request, HTTPException, Header
 from typing import Optional
 from app.core.postman import get_user
 from fastapi.responses import RedirectResponse
+from urllib.parse import urlencode
+import json
+import httpx
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
 from app.core.postman import get_user
@@ -46,7 +49,7 @@ async def jira_callback(request: Request) -> RedirectResponse:
         authorization_response=str(request.url)
     )
 
-    # jira_token = JiraToken.model_validate(token_json)
+    # create session token and store tokens
     session_token = _generate_token()
 
     await cache_set(
@@ -55,12 +58,49 @@ async def jira_callback(request: Request) -> RedirectResponse:
             "jira": token_json,
             "postman": None
         },
-        expire_at=token_json['expires_at']
+        expire_at=token_json.get('expires_at')
     )
 
-    response = RedirectResponse(f"http://localhost:5173/dashboard/projects#{session_token}")
+    access_token = token_json.get("access_token")
 
-    return response
+    # fetch jira user info (if possible)
+    user_info = None
+    if access_token:
+        try:
+            user_info = await get_jira_user_info(access_token)
+        except Exception:
+            user_info = None
+
+    # remove any id-like fields before sending to frontend
+    if isinstance(user_info, dict):
+        # Atlassian uses 'accountId' or 'id' keys
+        user_info.pop("id", None)
+        user_info.pop("accountId", None)
+        # if wrapped under 'user'
+        if "user" in user_info and isinstance(user_info["user"], dict):
+            user_info["user"].pop("id", None)
+            user_info["user"].pop("accountId", None)
+
+    user_info_json = json.dumps(user_info) if user_info is not None else "null"
+
+    # Redirect to frontend with access token, session token and user info in query params
+    redirect_params = {
+        "token": access_token,
+        "session": session_token,
+        "user": user_info_json,
+    }
+
+    redirect_url = f"http://localhost:5173/dashboard/projects?{urlencode(redirect_params)}"
+    return RedirectResponse(redirect_url)
+
+
+async def get_jira_user_info(access_token: str) -> Optional[dict]:
+    """Fetch Jira/Atlassian account info using the access token."""
+    headers = {"Authorization": f"Bearer {access_token}"}
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get("https://api.atlassian.com/me", headers=headers)
+        resp.raise_for_status()
+        return resp.json()
 
 
 async def postman_connect(session_token: str, key: str) -> Optional[bool]:
