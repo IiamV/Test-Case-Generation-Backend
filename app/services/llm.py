@@ -2,6 +2,7 @@ from app.core.llm import local_llm_chat
 from app.models.ollama import OllamaChatRequest
 from app.utils.utils import format_issue_descriptions
 from app.core.postman import create_request
+import json
 from typing import Optional, Dict, Any
 
 

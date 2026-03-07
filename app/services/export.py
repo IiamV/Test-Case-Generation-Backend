@@ -73,17 +73,18 @@ async def generate_excel(payload: Dict[str, Any]) -> BytesIO:
     row = 1
 
     # Iterate over testcase entries in the payload
-    for tc in payload["testcases"]:
+    for tc in payload.get("testcases", []):
         # Join preconditions into a multi-line cell
-        preconditions = "\n".join(tc.get("preconditions", []))
+        preconditions_list = tc.get("preconditions") or []
+        preconditions = "\n".join(preconditions_list)
 
         # Build a readable, paragraph-style representation of steps
         steps_paragraph = []
         for step in tc.get("steps", []):
             # Flatten input_data dictionary into a single line
-            input_data = ", ".join(
-                f"{k}: {v}" for k, v in step.get("input_data", {}).items()
-            )
+            input_dict = step.get("input_data") or {}
+            input_data = ", ".join(f"{k}: {v}" for k, v in input_dict.items())
+
             # Each step is rendered as a small formatted block
             steps_paragraph.append(
                 f"Step {step.get('step')}:\n"

@@ -11,7 +11,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # FastAPI settings
-    FASTAPI_SECRET_KEY: str | None = os.getenv("FASTAPI_SECRET_KEY")
+    FASTAPI_SECRET_KEY: Optional[str] = os.getenv("FASTAPI_SECRET_KEY")
 
     # LLM settings
     OLLAMA_HOST: str = os.getenv(
@@ -37,8 +37,6 @@ class Settings(BaseSettings):
     JIRA_CLIENT_ID: Optional[str] = os.getenv("JIRA_CLIENT_ID")
     JIRA_SECRET: Optional[str] = os.getenv("JIRA_SECRET")
     JIRA_REDIRECT_URL: Optional[str] = os.getenv("JIRA_REDIRECT_URL")
-
-    POSTMAN_API_KEY: Optional[str] = os.getenv("POSTMAN_API_KEY")
 
 
 # Singleton settings instance shared across the application
