@@ -1,9 +1,10 @@
-from fastapi import Request, HTTPException, Cookie
+from fastapi import Request, HTTPException, Header
 from typing import Optional
+from app.core.postman import get_user
 from fastapi.responses import RedirectResponse
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
-from app.models.jira import JiraToken
+from app.core.postman import get_user
 from app.core.cache import cache_set, cache_get
 import secrets
 
@@ -45,26 +46,19 @@ async def jira_callback(request: Request) -> RedirectResponse:
         authorization_response=str(request.url)
     )
 
-    jira_token = JiraToken.model_validate(token_json)
-    session_token = generate_token()
+    # jira_token = JiraToken.model_validate(token_json)
+    session_token = _generate_token()
 
     await cache_set(
         key=session_token,
         value={
-            "jira": jira_token,
+            "jira": token_json,
             "postman": None
         },
-        expire_at=jira_token.expires_at
+        expire_at=token_json['expires_at']
     )
 
-    response = RedirectResponse("/health")
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="lax"
-    )
+    response = RedirectResponse(f"/health#{session_token}")
 
     return response
 
@@ -72,11 +66,14 @@ async def jira_callback(request: Request) -> RedirectResponse:
 async def postman_connect(session_token: str, key: str) -> Optional[bool]:
     session = await cache_get(session_token)
 
-    if not session:
-        return None
+    if session is None:
+        return False
+
+    user = await get_user(key)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid Postman API Key")
 
     session['postman'] = key
-
     await cache_set(
         key=session_token,
         value=session
@@ -84,5 +81,43 @@ async def postman_connect(session_token: str, key: str) -> Optional[bool]:
     return True
 
 
-def generate_token() -> str:
+def _generate_token() -> str:
     return secrets.token_urlsafe(32)
+
+
+async def verify_postman_session(x_session_token: str = Header(...)):
+
+    session = await cache_get(x_session_token)
+    if session is None:
+        raise HTTPException(status_code=401, detail="Invalid session key")
+
+    key = session['postman']
+    if key is None:
+        raise HTTPException(status_code=401, detail="Missing Postman API Key")
+
+    user = await get_user(key)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid Postman API Key")
+
+    return key
+
+
+async def verify_session(x_session_token: str = Header(...)):
+    session = await cache_get(x_session_token)
+    if session is None:
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+    return x_session_token
+
+
+async def verify_jira_session(x_session_token: str = Header(...)):
+    session = await cache_get(x_session_token)
+
+    if session is None:
+        raise HTTPException(status_code=401, detail="Invalid session key")
+
+    key = session['jira']
+    if key is None:
+        raise HTTPException(status_code=401, detail="Missing Jira Key")
+
+    return key
