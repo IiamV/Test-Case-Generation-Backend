@@ -1,11 +1,9 @@
 
 import ollama
 from app.core.config import settings
-from chromadb.config import APIVersion, RoutingMode
 import chromadb.config
 import chromadb
 from typing import Sequence
-from chromadb.errors import ChromaError
 
 chromadb_client = chromadb.Client(
     settings=chromadb.config.Settings(
@@ -30,7 +28,7 @@ def chromadb_healthcheck() -> None:
 
 def embed_text(text: str) -> Sequence[float]:
     response = ollama.embeddings(
-        model=str(settings.EMBED_MODEL),
+        model=str(settings.LOCAL_EMBED_MODEL),
         prompt=text,
         options=None,
         keep_alive=None

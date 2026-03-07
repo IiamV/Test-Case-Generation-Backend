@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.api.routes import llm, system, srs, auth, export
+from app.api.routes import llm, system, srs, auth, export, postman
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.llm import ollama_init
@@ -34,13 +34,15 @@ app.add_middleware(
 app.include_router(system.router, tags=["System"])
 
 # Jira and SRS integration endpoints
-app.include_router(srs.router, tags=["Jira Services"])
+app.include_router(srs.router, tags=["Jira Services"], prefix="/jira")
 
 # Authentication and authorization endpoints
-app.include_router(auth.router, tags=["Authentication"])
+app.include_router(auth.router, tags=["Authentication and Authorization"])
 
 # LLM-driven testcase generation endpoints
-app.include_router(llm.router, tags=["Testcases Generation"])
+app.include_router(llm.router, tags=["LLM"])
 
 # Testcase export endpoints
-app.include_router(export.router, tags=["Export"])
+app.include_router(export.router, tags=["Export"], deprecated=True)
+
+app.include_router(postman.router, tags=["Postman"], prefix="/postman")

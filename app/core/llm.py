@@ -1,51 +1,85 @@
 # LLM abstraction layer for interacting with a local Ollama server
-from ollama import AsyncClient, ChatResponse
+from ollama import AsyncClient
 from app.core.config import settings
 from typing import List, Optional
 import httpx
 import traceback
-from app.models.ollama import OllamaChatResponse
+from app.models.postman import PostmanRequest
+from typing import List
+from pydantic import TypeAdapter
 
-# System prompt injected into the custom local Ollama model to constrain behavior
-OLLAMA_SYSTEM_PROMPT = """
-You are a test engineering assistant specialized in deriving system-level (black-box) test cases from software requirements.
+# System prompt injected into the custom Ollama model to constrain behavior
+SWD_MODEL_SYSTEM_PROMPT = """
+You are an API request generation assistant.
 
-Your task is to analyze the provided requirements and generate system test cases that strictly conform to the required JSON response schema.
+Your task is to generate HTTP request definitions that strictly conform to the provided JSON schema for a list of PostmanRequest objects.
 
-Output MUST be valid JSON and MUST exactly match the response model structure.
+CRITICAL OUTPUT RULES:
 
-General rules:
-- Return a single JSON object with a top-level key named "testcases".
-- Do not include comments, explanations, trailing commas, or any extra characters.
-- Use ASCII characters only.
-- Do not ask questions or request clarification.
-- Generate ONLY test cases directly traceable to the provided requirements.
-- Do NOT generate test cases about test cases, test suites, output format, or instructions.
-- Do not include code, code snippets, function calls, or pseudo-code in any field.
-- Do not explain reasoning or include commentary.
-- Stop generation once all requirements are covered.
+- Output MUST be valid JSON.
+- The top-level output MUST be a JSON array.
+- Each element in the array MUST strictly match the PostmanRequest schema.
+- Do NOT output a single object. Always output an array.
+- Do NOT include explanations, comments, markdown, or code fences.
+- Do NOT include fields not defined in the schema.
+- Do NOT omit required fields.
+- If an optional field is not applicable, set it to null.
+- If no query parameters are required, set "queryParams" to null.
+- Stop once all API operations described in the requirements are represented.
 
-Test case rules:
-- Each test case MUST include: id, title, steps, expected_result.
-- Fields "type", "priority", and "preconditions" are optional. If they cannot be determined, set them to null or an empty array as appropriate.
-- Use descriptive IDs such as "TC-001".
-- Titles must be human-readable with spaces (no underscores).
+SCHEMA CONSTRAINTS:
 
-Step rules:
-- Each step MUST include: step (integer), action, and input_data.
-- "step" must start at 1 and increment sequentially.
-- "action" must describe the user or system behavior and MUST NOT embed literal data values.
-- "input_data" MUST contain the literal data values used in that step as a JSON object.
-- If no input data is required for a step, set "input_data" to null.
+Each PostmanRequest object MUST contain:
+- name: string
+- description: string or null
+- url: string (absolute URL)
+- method: string
+- headers: array of { key: string, value: string }
+- queryParams: array of {
+      key: string,
+      value: string,
+      equals: boolean,
+      description: string or null,
+      enabled: boolean
+  } OR null
+- dataMode: string
+- rawModeData: string or null
+- dataOptions: {
+      raw: {
+          language: string
+      }
+  }
 
-Expected result rules:
-- "expected_result" MUST be a list of clear, deterministic outcome statements.
-- Do not embed variable data or implementation details in expected results.
+HTTP METHOD RULES:
 
-Data integrity rules:
-- Do not invent assumptions beyond the stated requirements.
-- Do not include implementation details or internal system behavior.
-- Use empty arrays ([]) or null where appropriate; do NOT use empty strings for non-string fields.
+For GET requests:
+- method MUST be "GET"
+- rawModeData MUST be null
+- dataMode MUST still be provided
+- Query parameters MUST be defined in "queryParams" (not embedded only in URL)
+
+For POST requests:
+- method MUST be "POST"
+- dataMode MUST be "raw"
+- rawModeData MUST contain a valid JSON string when a body is required
+- dataOptions.raw.language MUST be "json"
+
+HEADER RULES:
+
+- headers MUST always be a properly structured array.
+- Include realistic HTTP headers.
+- Do not include duplicate header keys.
+
+STRICT BEHAVIORAL RULES:
+
+- Generate only requests directly supported by the provided requirements.
+- Do not invent endpoints.
+- Do not generate test cases.
+- Do not generate metadata.
+- Do not describe your reasoning.
+- Do not output anything outside the JSON array.
+
+The output must be directly validatable against the provided JSON schema without modification.
 """
 
 
@@ -150,7 +184,7 @@ async def ollama_healthcheck() -> None:
         response.raise_for_status()
 
 
-async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatResponse:
+async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> List[PostmanRequest]:
     """
     Interact with the local OLLAMA server to generate testcases from provided requirements.
 
@@ -165,13 +199,15 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
         ValueError: If the local LLM returns no response.
     """
 
+    schema = TypeAdapter(List[PostmanRequest])
+
     # Send user requirements to the custom Ollama model and enforce schema-valid JSON output
     response = await ollama_client.chat(
         model=await get_ollama_model(),
         messages=[
             {
                 "role": "system",
-                "content": OLLAMA_SYSTEM_PROMPT
+                "content": SWD_MODEL_SYSTEM_PROMPT
             },
             {
                 "role": "user",
@@ -181,30 +217,15 @@ async def local_llm_chat(prompt: List[str], think: Optional[bool]) -> ChatRespon
         tools=None,
         stream=False,
         think=think,
-        format=OllamaChatResponse.model_json_schema()
+        format=schema.json_schema()
     )
 
     # Fail fast if the LLM returns no response
     if response is None:
         raise ValueError("No Local LLM Response from Core LLM")
 
+    if response and response.message and response.message.content:
+        requests_list = schema.validate_json(response.message.content)
+
     # Return structured response
-    return response
-
-
-# def api_llm(prompt: str) -> str:
-#     response = client.chat.completions.create(
-#         model='openai/gpt-oss-120b:free',
-#         messages=[
-#             {
-#                 "role": "user",
-#                 "content": prompt
-#             }
-#         ]
-#     )
-
-#     return f"LLM response for: {response}"
-
-
-# if __name__ == "__main__":
-#     local_llm("What is today's date?")
+    return requests_list
