@@ -1,10 +1,9 @@
 # LLM abstraction layer for interacting with a local Ollama server
-from ollama import AsyncClient, ChatResponse
+from ollama import AsyncClient
 from app.core.config import settings
 from typing import List, Optional
 import httpx
 import traceback
-from app.models.ollama import OllamaChatResponse
 from app.models.postman import PostmanRequest
 from typing import List
 from pydantic import TypeAdapter

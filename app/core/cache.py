@@ -85,13 +85,10 @@ async def cache_set(
 
     # Store a JSON-serializable value in Redis with optional expiration
     try:
-        if await redis_client.exists(key):
-            return
-
         if isinstance(value, BaseModel):
             value = value.model_dump()
 
-        await redis_client.set(key, json.dumps(value))
+        await redis_client.set(key, json.dumps(value), keepttl=True)
 
         if expire_at is not None:
             await redis_client.expireat(name=key, when=expire_at)

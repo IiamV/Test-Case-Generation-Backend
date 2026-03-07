@@ -3,21 +3,13 @@ import httpx
 from atlassian.jira import Jira
 from app.core.config import settings
 from app.models.jira import JiraToken
-from app.core.cache import cache_get
 
 ATLASSIAN_RESOURCES_URL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 
-async def _get_access_token() -> str:
+async def _get_access_token(key: str) -> str:
     try:
-        jira_token = await cache_get(key="jira_token")
-        if jira_token is None:
-            raise HTTPException(
-                status_code=401,
-                detail="Jira user token not found in storage"
-            )
-
-        jira_token = JiraToken.model_validate(jira_token)
+        jira_token = JiraToken.model_validate(key)
         access_token = jira_token.access_token
     except HTTPException as e:
         raise
@@ -63,15 +55,15 @@ async def _create_jira_client(access_token: str) -> Jira:
     )
 
 
-async def get_all_jira_projects():
-    access_token = await _get_access_token()
+async def get_all_jira_projects(key: str):
+    access_token = await _get_access_token(key)
 
     jira = await _create_jira_client(access_token)
     return jira.projects()
 
 
-async def get_all_jira_issues(project_name: str):
-    access_token = await _get_access_token()
+async def get_all_jira_issues(project_name: str, key: str):
+    access_token = await _get_access_token(key)
 
     if project_name is None:
         raise HTTPException(

@@ -2,11 +2,11 @@ from app.core.llm import local_llm_chat
 from app.models.ollama import OllamaChatRequest
 from app.utils.utils import format_issue_descriptions
 from app.core.postman import create_request
-import json
 from typing import Optional, Dict, Any
 
 
-async def generate_tests(collectionId: str, request: OllamaChatRequest) -> Optional[Dict[str, Any]]:
+async def generate_tests(collectionId: str, request: OllamaChatRequest, key: str) -> Optional[Dict[str, Any]]:
+    # TODO - Add if not provided a collectionId, create a new one
     """
     Generates system-level testcases from a structured Jira issue description using a local OLLAMA server.
 
@@ -28,7 +28,7 @@ async def generate_tests(collectionId: str, request: OllamaChatRequest) -> Optio
 
     for req in content:
         payload = req.model_dump(mode="json")
-        await create_request(collection_id=collectionId, payload=payload)
+        await create_request(collection_id=collectionId, payload=payload, key=key)
 
     # Explicitly return None when no valid LLM output is produced
     return

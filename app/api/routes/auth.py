@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Cookie
-from app.services.auth import jira_login, jira_callback, postman_connect
+from fastapi import APIRouter, Depends
+from app.services.auth import jira_login, jira_callback, postman_connect, verify_session
 from app.models.schemas import JiraAuthResponse, PostmanAPIKeyRequest, GenericResponse
 from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import Request, HTTPException
+from fastapi import Request
 
 router = APIRouter()
 
@@ -45,7 +45,7 @@ async def jira_auth_callback(request: Request):
     methods=["POST"],
     response_class=JSONResponse,
 )
-async def connect(request: PostmanAPIKeyRequest, session_token: str = Cookie(default=None)):
+async def connect(request: PostmanAPIKeyRequest, session_token: str = Depends(verify_session)):
     bool = await postman_connect(session_token, request.api_key)
     if not bool:
         return JSONResponse(
