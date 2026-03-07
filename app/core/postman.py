@@ -1,7 +1,4 @@
-import requests
-from typing import Literal, Any, List
-from app.core.config import settings
-from app.models.postman import PostmanRequest
+from typing import Any, Dict
 import httpx
 
 
@@ -9,48 +6,60 @@ POSTMAN_URLS = {
     'collections': 'https://api.getpostman.com/collections',
     'environments': 'https://api.getpostman.com/environments',
     'workspaces': 'https://api.getpostman.com/workspaces',
-    'user': 'https://api.getpostman.com/users/me',
+    'user': 'https://api.getpostman.com/me',
     'mocks': 'https://api.getpostman.com/mocks',
     'monitors': 'https://api.getpostman.com/monitors',
     'postbot': 'https://api.getpostman.com/postbot/generations/tool',
 }
 
-HEADERS: dict = {
-    'X-Api-Key': settings.POSTMAN_API_KEY
-}
+
+def _get_headers(key: str) -> Dict[str, str]:
+    return {
+        'X-Api-Key': key
+    }
 
 
-def get_all_collections():
-    response = requests.get(url=POSTMAN_URLS['collections'], headers=HEADERS)
+async def get_all_collections(key: str):
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            url=POSTMAN_URLS['collections'],
+            headers=_get_headers(key)
+        )
+    return response.json()['collections']
+
+
+async def get_collection(collection_id: str, key: str):
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            url=f"{POSTMAN_URLS['collections']}/{collection_id}",
+            headers=_get_headers(key)
+        )
     return response.json()
 
 
-def get_collection(collection_id: str):
-    response = requests.get(
-        url=f"{POSTMAN_URLS['collections']}/{collection_id}", headers=HEADERS)
+async def get_all_workspaces(key: str):
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            POSTMAN_URLS['workspaces'],
+            headers=_get_headers(key)
+        )
     return response.json()
 
 
-def get_all_workspaces():
-    response = requests.get(url=POSTMAN_URLS['workspaces'], headers=HEADERS)
-    return response.json()
-
-
-async def create_request(collection_id: str, payload: Any) -> Any:
-    url = f"{POSTMAN_URLS['collections']}/{collection_id}/requests"
+async def create_request(collection_id: str, payload: Any, key) -> Any:
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(
-            url=url,
-            headers=HEADERS,
+            url=f"{POSTMAN_URLS['collections']}/{collection_id}/requests",
+            headers=_get_headers(key),
             json=payload,
         )
-        response.raise_for_status()
-        return response.json()
+    return response.json()
 
 
-def get_all_requestIds(collection_id: str):
-    collection = get_collection(collection_id=collection_id)
+async def get_all_requestIds(collection_id: str, key: str):
+    collection = await get_collection(collection_id=collection_id, key=key)
     result = []
 
     for request in collection["collection"]["item"]:
@@ -59,16 +68,36 @@ def get_all_requestIds(collection_id: str):
     return result
 
 
-def get_user():
-    response = requests.get(url=POSTMAN_URLS['user'], headers=HEADERS)
+async def get_all_request(collection_id: str, key: str):
+    collection = await get_collection(collection_id=collection_id, key=key)
+    result = []
+
+    for request in collection["collection"]["item"]:
+        result.append(request)
+
+    return result
+
+
+async def get_user(key: str):
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            POSTMAN_URLS["user"],
+            headers=_get_headers(key)
+        )
+
+    if response.status_code == 401:
+        return None
+
+    response.raise_for_status()
     return response.json()
 
 
-def postbot_generate(
+async def postbot_generate(
         collectionId: str,
         requestId: str,
         language: str,
-        agentFramework: str
+        agentFramework: str,
+        key: str
 ) -> Any:
 
     POSTBOT_PAYLOAD = {
@@ -80,10 +109,11 @@ def postbot_generate(
         }
     }
 
-    response = requests.post(
-        url=POSTMAN_URLS['postbot'],
-        headers=HEADERS,
-        json=POSTBOT_PAYLOAD
-    )
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            url=POSTMAN_URLS['postbot'],
+            headers=_get_headers(key),
+            json=POSTBOT_PAYLOAD
+        )
 
     return response.json()
