@@ -43,6 +43,6 @@ app.include_router(auth.router, tags=["Authentication and Authorization"])
 app.include_router(llm.router, tags=["LLM"])
 
 # Testcase export endpoints
-# app.include_router(export.router, tags=["Export"])
+app.include_router(export.router, tags=["Export"], deprecated=True)
 
 app.include_router(postman.router, tags=["Postman"], prefix="/postman")
