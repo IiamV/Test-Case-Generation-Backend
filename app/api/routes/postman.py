@@ -57,7 +57,7 @@ async def collection(
     summary="Generate test script by specific request ID and collection ID",
     description="",
     responses={200: {"description": "Successfully generated"}},
-    methods=["GET"],
+    methods=["POST"],
     response_class=JSONResponse,
 )
 async def testscript(request: PostmanTestScriptRequest, session: str = Depends(verify_postman_session)):
@@ -81,7 +81,7 @@ async def testscript(request: PostmanTestScriptRequest, session: str = Depends(v
     summary="Generate all test script for all requests of a collection",
     description="",
     responses={200: {"description": "Successfully generated"}},
-    methods=["GET"],
+    methods=["POST"],
     response_class=JSONResponse,
 )
 async def testscripts(request: PostmanTestScriptsRequest, session=Depends(verify_postman_session)):
@@ -103,7 +103,7 @@ async def testscripts(request: PostmanTestScriptsRequest, session=Depends(verify
     summary="Get all request IDs using a collection ID",
     description="",
     responses={200: {"description": "Successfully retrieved"}},
-    methods=["POST"],
+    methods=["GET"],
     response_class=JSONResponse,
 )
 async def request(collectionId: str, session=Depends(verify_postman_session)):
