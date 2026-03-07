@@ -58,7 +58,7 @@ async def jira_callback(request: Request) -> RedirectResponse:
         expire_at=token_json['expires_at']
     )
 
-    response = RedirectResponse(f"/health#{session_token}")
+    response = RedirectResponse(f"http://localhost:5173/dashboard/projects#{session_token}")
 
     return response
 
