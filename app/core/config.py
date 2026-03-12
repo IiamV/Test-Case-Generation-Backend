@@ -12,6 +12,8 @@ load_dotenv()
 class Settings(BaseSettings):
     # FastAPI settings
     FASTAPI_SECRET_KEY: Optional[str] = os.getenv("FASTAPI_SECRET_KEY")
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "123")
 
     # LLM settings
     OLLAMA_HOST: str = os.getenv(

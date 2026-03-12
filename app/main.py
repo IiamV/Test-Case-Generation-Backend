@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.api.routes import llm, system, srs, auth, export, postman
+from app.api.routes import llm, system, srs, auth, export, postman, admin
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.llm import ollama_init
@@ -55,3 +55,5 @@ app.include_router(llm.router, tags=["LLM"])
 app.include_router(export.router, tags=["Export"], deprecated=True)
 
 app.include_router(postman.router, tags=["Postman"], prefix="/postman")
+
+app.include_router(admin.router, tags=["Admin"], prefix="/admin")
