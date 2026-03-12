@@ -22,16 +22,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS middleware for handling cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Session middleware for stateful authentication and user context
 app.add_middleware(
     SessionMiddleware,
     secret_key=str(settings.FASTAPI_SECRET_KEY),
     same_site="lax",
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
     # https_only=False,  # True in production with HTTPS
 )
 

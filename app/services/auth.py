@@ -2,9 +2,8 @@ from fastapi import Request, HTTPException, Header
 from typing import Optional
 from app.core.postman import get_user
 from fastapi.responses import RedirectResponse
+from app.services.jira import get_jira_user_info
 from urllib.parse import urlencode
-import json
-import httpx
 from authlib.integrations.httpx_client import OAuth2Client
 from app.core.config import settings
 from app.core.postman import get_user
@@ -71,36 +70,14 @@ async def jira_callback(request: Request) -> RedirectResponse:
         except Exception:
             user_info = None
 
-    # remove any id-like fields before sending to frontend
-    if isinstance(user_info, dict):
-        # Atlassian uses 'accountId' or 'id' keys
-        user_info.pop("id", None)
-        user_info.pop("accountId", None)
-        # if wrapped under 'user'
-        if "user" in user_info and isinstance(user_info["user"], dict):
-            user_info["user"].pop("id", None)
-            user_info["user"].pop("accountId", None)
-
-    user_info_json = json.dumps(user_info) if user_info is not None else "null"
-
-    # Redirect to frontend with access token, session token and user info in query params
+    # Redirect to frontend with session token and user info in query params
     redirect_params = {
-        "token": access_token,
         "session": session_token,
-        "user": user_info_json,
+        "user": user_info,
     }
 
     redirect_url = f"http://localhost:5173/dashboard/projects?{urlencode(redirect_params)}"
     return RedirectResponse(redirect_url)
-
-
-async def get_jira_user_info(access_token: str) -> Optional[dict]:
-    """Fetch Jira/Atlassian account info using the access token."""
-    headers = {"Authorization": f"Bearer {access_token}"}
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get("https://api.atlassian.com/me", headers=headers)
-        resp.raise_for_status()
-        return resp.json()
 
 
 async def postman_connect(session_token: str, key: str) -> Optional[bool]:
